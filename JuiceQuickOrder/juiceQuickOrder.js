@@ -336,7 +336,7 @@ var JuiceQuickOrder = React.createClass({
     }
 });
 
-var cssId = 'myCss';  // you could encode the css path itself to generate id..
+var cssId = 'myCss';
 if (!document.getElementById(cssId))
 {
     var head  = document.getElementsByTagName('head')[0];
