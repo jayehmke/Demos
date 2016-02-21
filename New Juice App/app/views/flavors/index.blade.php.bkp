@@ -1,0 +1,302 @@
+@extends('layout')
+
+<style>
+	
+.noIng{
+	background-color: #d9534f;
+}	
+
+.yesIng {
+	background-color: #ffffff;
+}
+	
+</style>
+
+
+@section('content')
+
+
+<script type='text/javascript'>//<![CDATA[ 
+$(window).load(function(){
+$(function() {
+    $('.noJuiceForYou').tooltip();
+});
+});//]]>  
+
+$(document).ready(function(){
+	$(function() {
+	    jQuery.fn.extend({
+	        disable: function(state) {
+	            return this.each(function() {
+	                this.disabled = state;
+	            });
+	        }
+	    });
+    });
+	
+  $("button").click(function(){
+	  var id = this.id;
+	  var qty = $("#" + id + "-qty").val()
+	  var ingredients = $("#"+id+"-ings").val()
+	  var noJuiceForYou = false;
+	  
+	  console.log("Flavor Id: "+id);
+	  console.log("Quantity Making: "+qty);
+	  console.log("Ingredient List: "+ingredients);
+	  
+	  ingredients = ingredients.replace(/,\s*$/, "");
+	  
+	  var ingArray = ingredients.split(',');
+	  
+	  $.each( ingArray, function( index, value ) {
+	  	console.log("Ingredient Id: "+value);
+	  	var currentValue = $("#flavor-"+id+"-ing-"+value+"-currentLevel").val();
+	  	
+	  	console.log("Current Level: "+currentValue);
+	  	
+	  	var ingAmt = $(".flavor-"+id+"-ing-"+value+"-amt").text();
+	  	
+	  	var amtUsing = ingAmt * qty;
+	  	
+	  	console.log("Amount Using: "+amtUsing);
+	  	
+	  	//var dbAmt = $.load('ingredients/' + value + 'getcount');
+	  	
+	  	var dbAmt = 0;
+
+          $( "#result" ).load( "/ingredients/" + value + "/getcount" );
+
+	  	$.get("/ingredients/" + value + "/getcount", function(response) {
+		     dbAmt = response;
+		});
+
+	  	console.log("Amount in DB: " + dbAmt);
+	  	
+	  	currentValue = dbAmt;
+	  	
+	  	var newAmt = currentValue - qty * ingAmt;
+	  	
+	  	if (amtUsing > currentValue){
+	  		noJuiceForYou = true;
+	  		return false;
+	  	}
+	  	
+	  	$("#flavor-"+id+"-ing-"+value+"-currentLevel").val(newAmt);
+	  	$('.' + value + "-currentLevel").html(newAmt);
+	  	
+	  	if (newAmt < ingAmt){
+		  	//$(".ingRow-"+value).addClass("noIng");
+		  	$(".ingRow-"+value).removeClass( "yesIng" ).addClass( "noIng" );
+		  	//$(".ingRow-"+value).css("background-color","#d9534f");
+	  		$('button[id="'+id+'"]').disable(true);
+	  	}
+	  });
+	  
+	  if (noJuiceForYou){
+		  $('#juice-fail').modal('show');
+		  console.log("No Juice for you!");
+		  return false;
+	  }
+	  
+	  $.ajax({url:"/flavors/" + id + "," + qty + "/make",success:function(result){
+    }});
+  });
+});
+
+
+</script>
+
+
+<!--
+<script type="text/javascript">
+
+function show_data()
+{
+ $('#getCount').load('/ingredients/2/getcount').hide().fadeIn(4000);
+}
+setInterval('show_data()', 5000);	
+
+</script>
+-->
+
+
+
+
+<?php
+	
+$flavorsearch = array();
+foreach ($flavors as $flavor): 
+
+	$flavorletter = $flavor->title;
+	$flavorletter = strtoupper($flavorletter[0]);
+	array_push($flavorsearch, $flavorletter);
+	
+	endforeach; 
+	
+$flavorlist =  array_unique($flavorsearch);
+sort($flavorlist);
+
+$flavorCount = count($flavorlist);
+
+$flavorHalfOne = array_slice($flavorlist, 0, $flavorCount / 2);
+$flavorHalfTwo = array_slice($flavorlist, $flavorCount / 2);	
+	
+	
+?>
+
+
+<!--
+<script>
+$(document).ready(function(){
+  $("button").click(function(){
+  	var id = this.id;
+  	var itemid = id.split("/")[3];
+    $("#invAmt"+itemid).load(id);
+    $
+  });
+});
+</script>
+-->
+<div id="juice-fail" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content" style="padding:30px;">
+		  You cannot make this recipe with the current ingredient levels.
+		</div>
+	</div>
+</div>
+<div id="juice-success" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content" style="padding:30px;">
+		  You have successfully made this flavor.
+		</div>
+	</div>
+</div>
+
+<div id="#result"></div>
+
+<div class="row">
+	
+	<div class="col-md-1">
+		
+		<nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix">
+			<div class="btn-group-vertical btn-group-lg" role="group" aria-label="...">
+	
+	
+			<?php 
+
+					foreach ($flavorHalfOne as $flavoritem): ?>
+							
+							
+							<button onclick="window.location.href='#<?php echo $flavoritem; ?>'" type="button" class="btn btn-default"><?php echo $flavoritem; ?></button>
+					
+					<?php endforeach; ?>
+
+			</div>
+
+          </nav>
+		
+	</div>
+	
+	<div class="col-md-1">
+		
+		<nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix">
+			<div class="btn-group-vertical btn-group-lg" role="group" aria-label="...">
+	
+
+					<?php foreach ($flavorHalfTwo as $flavoritem): ?>
+							<button onclick="window.location.href='#<?php echo $flavoritem; ?>'" type="button" class="btn btn-default"><?php echo $flavoritem; ?></button>
+					<?php endforeach; ?>
+			</div>
+			
+
+            
+          </nav>
+		
+
+
+
+
+	</div>
+	
+	<div class="col-md-10">
+		<div class="panel panel-default">
+			<div class="panel-heading">Flavors</div>
+			<div id="getCount">4</div>
+		    @foreach($flavors as $flavor)
+			    	<div class="panel panel-default" id="{{ $flavor->title[0] }}" style="margin-top:40px">
+			    	
+			    		<div class="panel-heading" style="text-align:center;"><h3>{{ $flavor->title }} - {{ $flavor->brand->name }}</h1></div>
+			    		<div class="panel-body">
+							<p style="text-align:center;">{{ $flavor->body }}</p>
+						</div>
+						<table class="table">
+						<?php $disabled = 0; ?>
+							@foreach($flavor->ingredients as $ingredient)
+							<?php 
+								$class = "yesIng"; 
+								
+								if ($ingredient->pivot->amount > $ingredient->current_level){
+									$disabled = 1;
+									$class = "noIng";
+							}
+							?>
+				        		<tr class="ingRow-{{ $ingredient->id }} <?php echo $class; ?>">
+				        			<td><a href="/ingredients/{{ $ingredient->id }}/edit">Edit this ingredient</a></td>
+				        			<td style="text-align:right;">{{$ingredient->name}}</td>
+				        			<td style="text-align:left;"><span class="flavor-{{ $flavor->id }}-ing-{{ $ingredient->id }}-amt"> <?php if (!$ingredient->pivot->amount){$disabled = 1;}?> {{ $ingredient->pivot->amount }}</td>
+				        			<td>current level: <span class="{{ $ingredient->id }}-currentLevel">{{ $ingredient->current_level}}</span>
+				        			<input type="hidden" id="flavor-{{ $flavor->id }}-ing-{{ $ingredient->id }}-currentLevel" value="{{ $ingredient->current_level }}">
+				        			</td>
+				        		</tr>
+				        		
+							@endforeach
+							<input type="hidden" id="<?php echo $flavor->id . "-ings" ; ?>" value="<?php foreach ($flavor->ingredients as $ingredient){echo $ingredient->id . ",";}?>" >
+						</table>
+						<div class="row">
+							
+							<div class="col-xs-4">&nbsp;</div>
+							
+							<div class="col-xs-3">
+								<div class="input-group">
+							      <input id="{{ $flavor->id }}-qty" type="text" value="1" class="form-control input-lg" placeholder="1">
+							      <span class="input-group-btn">
+								        <button id="{{ $flavor->id }}" type="button"
+										        <?php if ($disabled == 1): ?>
+										        class="btn btn-default btn-lg noJuiceForYou"
+										        disabled="disabled"
+										        <?php else: ?>
+										        class="btn btn-defaulut btn-lg"
+										        <?php endif; ?>
+										        data-placement="bottom"
+										        data-toggle="modal"
+										        data-target="#juice-success"
+										        >
+										    Make This Recipe
+										</button>
+																		
+							      </span>
+							    </div><!-- /input-group -->
+							</div>
+						</div>
+						
+						<div class="row">
+							
+							<div class="col-xs-12">&nbsp;</div>
+							
+						</div>
+						
+						<div class="btn-group btn-group-justified" role="group">
+						  <a href="{{ URL::to('flavors/' . $flavor->id . '/edit') }}" class="btn btn-success btn-lg">Edit Flavor</a>
+						  <a href="#" class="btn btn-danger btn-lg">Delete Flavor</a>
+						</div>
+			    	</div>
+			@endforeach
+
+			
+
+		        
+
+		</div>
+	</div>
+</div>
+@stop

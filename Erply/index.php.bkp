@@ -1,0 +1,37 @@
+<?php
+
+// include ERPLY API class
+include("EAPI.class.php");
+include("getInventoryTransfers.php");
+
+// Initialise class
+$api = new EAPI();
+
+if (session_status() == PHP_SESSION_NONE) {
+	session_start();
+}
+
+// Configuration settings
+$api->clientCode = "428377";
+$api->username = "jason.ehmke@madvapes.com";
+$api->password = "Vaping123";
+$api->url = "https://".$api->clientCode.".erply.com/api/";
+
+// Get the product by the sku
+$result = $api->sendRequest("getProducts", array(
+	'code2' => '4272' // pass in a sku variable here
+));
+
+// Default output format is JSON, so we'll decode it into a PHP array
+$output = json_decode($result, true);
+
+// Now get the product's ID
+
+$productId = $output['records'][0]['productID'];
+
+echo $productId;
+
+print "<pre>";
+print_r($output);
+print "</pre>";
+
